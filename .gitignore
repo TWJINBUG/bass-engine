@@ -6,3 +6,9 @@ local.properties
 
 # logs
 *.log
+
+# android project build outputs
+android/build/
+android/app/build/
+android/core/build/
+android/.gradle/

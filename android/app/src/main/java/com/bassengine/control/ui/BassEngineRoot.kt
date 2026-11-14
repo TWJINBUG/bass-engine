@@ -1,7 +1,6 @@
 package com.bassengine.control.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -150,39 +149,36 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
                 if (active) p.text else p.muted,
                 label = "navLabel"
             )
-            val pill by animateFloatAsState(if (active) 1f else 0f, label = "navPill")
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(20.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onSelect(index) }
-                    .padding(vertical = 5.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        Modifier
-                            .size(width = 44.dp, height = 26.dp)
-                            .clip(RoundedCornerShape(13.dp))
-                            .background(p.accent2.copy(alpha = 0.18f * pill))
-                    )
+            val pillColor by animateColorAsState(
+                if (active) p.accent2.copy(alpha = 0.20f) else Color.Transparent,
+                label = "navPill"
+            )
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Column(
+                    Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(pillColor)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onSelect(index) }
+                        .padding(horizontal = 17.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Icon(
                         painter = painterResource(item.icon),
                         contentDescription = item.label,
                         tint = tint,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(21.dp)
+                    )
+                    Text(
+                        item.label,
+                        color = labelColor,
+                        fontSize = 10.sp,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 }
-                Text(
-                    item.label,
-                    color = labelColor,
-                    fontSize = 10.sp,
-                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
         }
     }

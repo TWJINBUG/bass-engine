@@ -1,7 +1,10 @@
 package com.bassengine.control.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -24,9 +27,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,12 +52,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,6 +79,7 @@ import com.bassengine.control.ui.theme.LocalPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
 private data class NavItem(val label: String, val icon: Int)
 
@@ -169,17 +180,27 @@ fun BassEngineRoot() {
 private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
     val p = LocalPalette.current
     val shape = RoundedCornerShape(50)
+    val density = LocalDensity.current
     var dragIndex by remember { mutableStateOf<Int?>(null) }
-    val sheenTransition = rememberInfiniteTransition(label = "navSheen")
-    val sheen by sheenTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(6000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "navSheenShift"
+    var rowSize by remember { mutableStateOf(IntSize.Zero) }
+    val blobX = remember { Animatable(0f) }
+    val target = dragIndex ?: selected
+
+    LaunchedEffect(target, rowSize.width) {
+        if (rowSize.width == 0) return@LaunchedEffect
+        val itemW = rowSize.width / navItems.size.toFloat()
+        val x = itemW * (target + 0.5f) - itemW * 0.86f / 2f
+        if (!blobX.isRunning && blobX.value == 0f) blobX.snapTo(x)
+        else blobX.animateTo(x, spring(dampingRatio = 0.42f, stiffness = 430f))
+    }
+
+    val glide by animateFloatAsState(
+        targetValue = if (blobX.isRunning) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.32f, stiffness = 480f),
+        label = "blobGlide"
     )
+    val blobWidth = with(density) { (rowSize.width / navItems.size.toFloat() * 0.86f).toDp() }
+    val blobHeight = with(density) { rowSize.height.toDp() }
 
     Box(
         Modifier
@@ -187,122 +208,207 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
             .navigationBarsPadding()
             .padding(horizontal = 18.dp, vertical = 10.dp)
             .shadow(
-                elevation = 22.dp,
+                elevation = 24.dp,
                 shape = shape,
                 clip = false,
                 ambientColor = Color.Black,
-                spotColor = Color.Black
+                spotColor = p.accent2.copy(alpha = 0.22f)
             )
             .clip(shape)
-            .background(Color(0xE00A0D12))
+            .background(Color(0xE60A0C12))
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.13f),
-                        Color.White.copy(alpha = 0.05f)
+                        Color.White.copy(alpha = 0.12f),
+                        Color.White.copy(alpha = 0.035f)
                     )
                 )
             )
             .border(
-                1.5.dp,
+                1.dp,
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.34f),
-                        Color.White.copy(alpha = 0.10f),
-                        Color.White.copy(alpha = 0.04f)
+                        Color.White.copy(alpha = 0.24f),
+                        Color.White.copy(alpha = 0.06f)
                     )
                 ),
                 shape
             )
     ) {
-        Canvas(Modifier.matchParentSize()) {
-            val w = size.width
-            val h = size.height
-            val x = w * (sheen * 1.4f - 0.2f)
+        // 镜面高光：顶部一条细亮线 + 玻璃内部的斜向反光
+        Canvas(Modifier.fillMaxWidth().height(1.dp).align(Alignment.TopCenter)) {
             drawRect(
-                Brush.linearGradient(
-                    colors = listOf(
+                Brush.horizontalGradient(
+                    listOf(
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.05f),
+                        Color.White.copy(alpha = 0.55f),
                         Color.Transparent
-                    ),
-                    start = Offset(x - w * 0.22f, 0f),
-                    end = Offset(x + w * 0.22f, h)
+                    )
                 )
             )
         }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 6.dp)
-                .pointerInput(navItems.size) {
-                    detectTapGestures(
-                        onLongPress = { /* 长按留给拖动切页 */ },
-                        onTap = { offset ->
-                            val index = ((offset.x / size.width) * navItems.size)
-                                .toInt().coerceIn(0, navItems.lastIndex)
-                            onSelect(index)
+        Canvas(Modifier.matchParentSize()) {
+            drawRect(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.05f),
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.03f)
+                    ),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, size.height)
+                )
+            )
+        }
+
+        Box(Modifier.fillMaxWidth().padding(6.dp)) {
+            if (rowSize.width > 0) {
+                Box(
+                    Modifier
+                        .offset { IntOffset(blobX.value.roundToInt(), 0) }
+                        .size(width = blobWidth, height = blobHeight)
+                        .graphicsLayer {
+                            // 移动时沿速度方向拉长，停下回弹，做出“液体”感
+                            scaleX = 1f + 0.10f * glide
+                            scaleY = 1f - 0.12f * glide
                         }
-                    )
-                }
-                .pointerInput(navItems.size) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { offset ->
-                            dragIndex = ((offset.x / size.width) * navItems.size)
-                                .toInt().coerceIn(0, navItems.lastIndex)
-                        },
-                        onDrag = { change, _ ->
-                            dragIndex = ((change.position.x / size.width) * navItems.size)
-                                .toInt().coerceIn(0, navItems.lastIndex)
-                        },
-                        onDragEnd = {
-                            dragIndex?.let(onSelect)
-                            dragIndex = null
-                        },
-                        onDragCancel = { dragIndex = null }
-                    )
-                },
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            navItems.forEachIndexed { index, item ->
-                val active = selected == index
-                val hovered = dragIndex == index
-                val highlighted = active || hovered
-                val tint by animateColorAsState(
-                    if (highlighted) p.accent3 else p.muted.copy(alpha = 0.78f),
-                    label = "navTint"
-                )
-                val labelColor by animateColorAsState(
-                    if (highlighted) p.accent3 else p.muted,
-                    label = "navLabel"
-                )
-                val blob by animateColorAsState(
-                    if (highlighted) Color.White.copy(alpha = if (hovered) 0.20f else 0.13f)
-                    else Color.Transparent,
-                    label = "navBlob"
-                )
-                val iconScale by animateFloatAsState(
-                    targetValue = if (highlighted) 1.06f else 1f,
-                    animationSpec = tween(220, easing = FastOutSlowInEasing),
-                    label = "navIconScale"
-                )
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Column(
-                        Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(blob)
-                            .padding(horizontal = 18.dp, vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            painter = painterResource(item.icon),
-                            contentDescription = item.label,
-                            tint = tint,
-                            modifier = Modifier
-                                .size(26.dp)
-                                .graphicsLayer { scaleX = iconScale; scaleY = iconScale }
+                        .shadow(
+                            elevation = 12.dp,
+                            shape = RoundedCornerShape(50),
+                            clip = false,
+                            ambientColor = Color.Transparent,
+                            spotColor = Color.White.copy(alpha = 0.28f)
                         )
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.30f),
+                                    Color.White.copy(alpha = 0.10f),
+                                    Color.White.copy(alpha = 0.035f)
+                                )
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.52f),
+                                    Color.White.copy(alpha = 0.08f)
+                                )
+                            ),
+                            RoundedCornerShape(50)
+                        )
+                ) {
+                    // 胶囊内的镜面反光
+                    Canvas(Modifier.matchParentSize()) {
+                        drawOval(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.42f),
+                                    Color.Transparent
+                                ),
+                                center = Offset(size.width * 0.30f, size.height * 0.14f),
+                                radius = size.width * 0.55f
+                            ),
+                            topLeft = Offset(0f, 0f),
+                            size = Size(size.width, size.height * 0.72f)
+                        )
+                        // 斜向镜面条纹
+                        val bandW = size.width * 0.22f
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.22f),
+                                    Color.Transparent
+                                ),
+                                start = Offset(size.width * 0.30f, 0f),
+                                end = Offset(size.width * 0.55f, size.height)
+                            )
+                        )
+                        // 顶部 1px 高光
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.55f),
+                            start = Offset(size.width * 0.18f, 1f),
+                            end = Offset(size.width * 0.82f, 1f),
+                            strokeWidth = 1.2f
+                        )
+                    }
+                }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { rowSize = it.size }
+                    .pointerInput(navItems.size) {
+                        detectTapGestures(
+                            onLongPress = { },
+                            onTap = { offset ->
+                                val index = ((offset.x / size.width) * navItems.size)
+                                    .toInt().coerceIn(0, navItems.lastIndex)
+                                onSelect(index)
+                            }
+                        )
+                    }
+                    .pointerInput(navItems.size) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { offset ->
+                                dragIndex = ((offset.x / size.width) * navItems.size)
+                                    .toInt().coerceIn(0, navItems.lastIndex)
+                            },
+                            onDrag = { change, _ ->
+                                dragIndex = ((change.position.x / size.width) * navItems.size)
+                                    .toInt().coerceIn(0, navItems.lastIndex)
+                            },
+                            onDragEnd = {
+                                dragIndex?.let(onSelect)
+                                dragIndex = null
+                            },
+                            onDragCancel = { dragIndex = null }
+                        )
+                    },
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                navItems.forEachIndexed { index, item ->
+                    val active = selected == index
+                    val hovered = dragIndex == index
+                    val highlighted = active || hovered
+                    val tint by animateColorAsState(
+                        if (highlighted) p.accent3 else p.muted.copy(alpha = 0.80f),
+                        label = "navTint"
+                    )
+                    val labelColor by animateColorAsState(
+                        if (highlighted) p.accent3 else p.muted,
+                        label = "navLabel"
+                    )
+                    val iconScale by animateFloatAsState(
+                        targetValue = if (highlighted) 1.08f else 1f,
+                        animationSpec = spring(dampingRatio = 0.35f, stiffness = 600f),
+                        label = "navIconScale"
+                    )
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Column(
+                            Modifier.padding(vertical = 7.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                painter = painterResource(item.icon),
+                                contentDescription = item.label,
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale }
+                            )
+                            Text(
+                                item.label,
+                                color = labelColor,
+                                fontSize = 10.sp,
+                                fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Medium,
+                                modifier = Modifier.padding(top = 3.dp)
+                            )
+                        }
                     }
                 }
             }

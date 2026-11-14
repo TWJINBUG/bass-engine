@@ -14,6 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.bassengine.core.THEME_DARK
+import com.bassengine.core.THEME_LIQUID
 import com.bassengine.core.THEME_MIDNIGHT
 import com.bassengine.core.THEME_NEON
 import com.bassengine.core.THEME_TITANIUM
@@ -55,6 +56,12 @@ val Palettes = linkedMapOf(
         Color(0xFF0B0C0F), Color(0xFF111318), Color(0xFF171A20),
         Color(0xFFF0F3F8), Color(0xFF8C96A6),
         Color(0xFFC0C6D4), Color(0xFF8E9AAF), Color(0xFFE8EDF5)
+    ),
+    THEME_LIQUID to Palette(
+        THEME_LIQUID, "液晶",
+        Color(0xFF041018), Color(0xFF071C28), Color(0xFF0A2433),
+        Color(0xFFF2FCFF), Color(0xFF93B4C6),
+        Color(0xFF5FE0FF), Color(0xFF6E8CFF), Color(0xFFC9F6FF)
     )
 )
 

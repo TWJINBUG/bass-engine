@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -125,7 +126,10 @@ fun SettingsScreen(
         )
 
         SectionHeader("主题", "一键换肤，面板与图表同步变化")
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             Palettes.values.forEach { palette ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

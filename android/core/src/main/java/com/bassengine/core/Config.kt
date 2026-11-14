@@ -4,6 +4,7 @@ const val THEME_DARK = "dark"
 const val THEME_MIDNIGHT = "midnight"
 const val THEME_NEON = "neon"
 const val THEME_TITANIUM = "titanium"
+const val THEME_LIQUID = "liquid"
 
 const val SURROUND_WIDE = "wide"
 const val SURROUND_CINEMA = "cinema"
@@ -96,7 +97,7 @@ data class BassEngineConfig(
             bands.size == DspMath.BAND_COUNT -> bands.map { DspMath.clampGain(it) }
             else -> Presets.byId(Presets.SPACE)!!.bands
         }
-        val safeTheme = theme.takeIf { it in setOf(THEME_DARK, THEME_MIDNIGHT, THEME_NEON, THEME_TITANIUM) } ?: THEME_DARK
+        val safeTheme = theme.takeIf { it in setOf(THEME_DARK, THEME_MIDNIGHT, THEME_NEON, THEME_TITANIUM, THEME_LIQUID) } ?: THEME_DARK
         val safeMode = surround.mode.takeIf { it in setOf(SURROUND_WIDE, SURROUND_CINEMA, SURROUND_NEAR) } ?: SURROUND_WIDE
         return copy(
             bands = safeBands,

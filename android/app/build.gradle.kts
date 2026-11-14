@@ -11,8 +11,8 @@ android {
         applicationId = "com.bassengine.control"
         minSdk = 26
         targetSdk = 34
-        versionCode = 725
-        versionName = "7.2.5"
+        versionCode = 726
+        versionName = "7.2.6"
     }
 
     buildFeatures {

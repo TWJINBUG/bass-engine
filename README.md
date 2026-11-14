@@ -58,7 +58,7 @@ root 守护进程 (GlobalDaemon) 每 400 ms 看一次文件（仅 mtime/size 变
 
 1. 下载 `dist/BASS-ENGINE-Global-KernelSU-v0.2.0.zip`，在 KernelSU 管理器里
    从本地安装，然后重启。
-2. 安装 `dist/BASS-ENGINE-control-v7.2.5-debug.apk`。
+2. 安装 `dist/BASS-ENGINE-control-v7.2.6-debug.apk`。
 3. 打开 App，首页应显示「全局 DSP 已连接 · 效果 #ID」。
 
 命令行安装（root）：

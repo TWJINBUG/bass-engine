@@ -14,6 +14,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -47,6 +50,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -164,13 +168,14 @@ fun BassEngineRoot() {
 @Composable
 private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
     val p = LocalPalette.current
-    val shape = RoundedCornerShape(30.dp)
+    val shape = RoundedCornerShape(50)
+    var dragIndex by remember { mutableStateOf<Int?>(null) }
     val sheenTransition = rememberInfiniteTransition(label = "navSheen")
     val sheen by sheenTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(5200, easing = LinearEasing),
+            animation = tween(6000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "navSheenShift"
@@ -180,35 +185,31 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
         Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 18.dp, vertical = 10.dp)
             .shadow(
-                elevation = 18.dp,
+                elevation = 22.dp,
                 shape = shape,
                 clip = false,
                 ambientColor = Color.Black,
-                spotColor = p.accent2.copy(alpha = 0.35f)
+                spotColor = Color.Black
             )
             .clip(shape)
+            .background(Color(0xE00A0D12))
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.115f),
-                        Color.White.copy(alpha = 0.045f)
+                        Color.White.copy(alpha = 0.13f),
+                        Color.White.copy(alpha = 0.05f)
                     )
                 )
             )
-            .background(
-                Brush.verticalGradient(
-                    listOf(p.bg.deepen(0.35f).copy(alpha = 0.62f), p.bgDeep.copy(alpha = 0.78f))
-                )
-            )
             .border(
-                1.dp,
+                1.5.dp,
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.30f),
-                        p.accent2.copy(alpha = 0.16f),
-                        Color.White.copy(alpha = 0.05f)
+                        Color.White.copy(alpha = 0.34f),
+                        Color.White.copy(alpha = 0.10f),
+                        Color.White.copy(alpha = 0.04f)
                     )
                 ),
                 shape
@@ -222,7 +223,7 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
                 Brush.linearGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color.White.copy(alpha = 0.07f),
+                        Color.White.copy(alpha = 0.05f),
                         Color.Transparent
                     ),
                     start = Offset(x - w * 0.22f, 0f),
@@ -233,54 +234,65 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 6.dp),
+                .padding(horizontal = 6.dp, vertical = 6.dp)
+                .pointerInput(navItems.size) {
+                    detectTapGestures(
+                        onLongPress = { /* 长按留给拖动切页 */ },
+                        onTap = { offset ->
+                            val index = ((offset.x / size.width) * navItems.size)
+                                .toInt().coerceIn(0, navItems.lastIndex)
+                            onSelect(index)
+                        }
+                    )
+                }
+                .pointerInput(navItems.size) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { offset ->
+                            dragIndex = ((offset.x / size.width) * navItems.size)
+                                .toInt().coerceIn(0, navItems.lastIndex)
+                        },
+                        onDrag = { change, _ ->
+                            dragIndex = ((change.position.x / size.width) * navItems.size)
+                                .toInt().coerceIn(0, navItems.lastIndex)
+                        },
+                        onDragEnd = {
+                            dragIndex?.let(onSelect)
+                            dragIndex = null
+                        },
+                        onDragCancel = { dragIndex = null }
+                    )
+                },
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             navItems.forEachIndexed { index, item ->
                 val active = selected == index
+                val hovered = dragIndex == index
+                val highlighted = active || hovered
                 val tint by animateColorAsState(
-                    if (active) p.accent3 else p.muted.copy(alpha = 0.72f),
+                    if (highlighted) p.accent3 else p.muted.copy(alpha = 0.78f),
                     label = "navTint"
                 )
                 val labelColor by animateColorAsState(
-                    if (active) p.text else p.muted,
+                    if (highlighted) p.accent3 else p.muted,
                     label = "navLabel"
                 )
+                val blob by animateColorAsState(
+                    if (highlighted) Color.White.copy(alpha = if (hovered) 0.20f else 0.13f)
+                    else Color.Transparent,
+                    label = "navBlob"
+                )
                 val iconScale by animateFloatAsState(
-                    targetValue = if (active) 1.08f else 1f,
-                    animationSpec = tween(240, easing = FastOutSlowInEasing),
+                    targetValue = if (highlighted) 1.06f else 1f,
+                    animationSpec = tween(220, easing = FastOutSlowInEasing),
                     label = "navIconScale"
                 )
-                val pillBrush = if (active) {
-                    Brush.verticalGradient(
-                        listOf(
-                            p.accent2.copy(alpha = 0.26f),
-                            p.accent2.copy(alpha = 0.10f)
-                        )
-                    )
-                } else {
-                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
-                }
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Column(
                         Modifier
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(pillBrush)
-                            .then(
-                                if (active) {
-                                    Modifier.border(
-                                        1.dp,
-                                        p.accent3.copy(alpha = 0.18f),
-                                        RoundedCornerShape(18.dp)
-                                    )
-                                } else Modifier
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { onSelect(index) }
-                            .padding(horizontal = 17.dp, vertical = 6.dp),
+                            .clip(RoundedCornerShape(50))
+                            .background(blob)
+                            .padding(horizontal = 18.dp, vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
@@ -288,15 +300,8 @@ private fun EngineNavBar(selected: Int, onSelect: (Int) -> Unit) {
                             contentDescription = item.label,
                             tint = tint,
                             modifier = Modifier
-                                .size(21.dp)
+                                .size(26.dp)
                                 .graphicsLayer { scaleX = iconScale; scaleY = iconScale }
-                        )
-                        Text(
-                            item.label,
-                            color = labelColor,
-                            fontSize = 10.sp,
-                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                            modifier = Modifier.padding(top = 3.dp)
                         )
                     }
                 }

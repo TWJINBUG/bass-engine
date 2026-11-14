@@ -1,0 +1,8 @@
+# build outputs
+out/
+build/
+.gradle/
+local.properties
+
+# logs
+*.log

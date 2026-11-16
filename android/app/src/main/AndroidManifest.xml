@@ -39,7 +39,7 @@
             android:name=".tiles.EngineTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile_engine"
-            android:label="BASS 引擎"
+            android:label="BASS 总开关"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />

@@ -42,7 +42,7 @@ class EngineTileService : TileService() {
         val tile = qsTile ?: return
         val on = config(this).current().engineOn
         tile.state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = "BASS 引擎"
+        tile.label = "BASS 总开关"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             tile.subtitle = if (on) "ON · 全局 DSP" else "OFF · 已旁路"
         }

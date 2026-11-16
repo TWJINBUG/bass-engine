@@ -8,7 +8,7 @@ mkdir -p /data/adb/bassengine
 
 # 模块自带控制 App：版本不一致就静默安装/升级
 APP_APK="$MODDIR/app/BassEngine.apk"
-APP_VER=7.3.0
+APP_VER=7.3.1
 if [ -f "$APP_APK" ]; then
   (
     for i in 1 2 3 4 5 6; do

@@ -1,6 +1,6 @@
 id=bassengine_global
 name=BASS ENGINE Global DSP
-version=v0.3.0
-versionCode=3
+version=v0.3.1
+versionCode=4
 author=BASS ENGINE
 description=Root-level global DynamicsProcessing engine for BASS ENGINE. Does not modify kernel or partitions.

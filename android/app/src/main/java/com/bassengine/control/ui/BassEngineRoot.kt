@@ -74,7 +74,6 @@ import com.bassengine.control.R
 import com.bassengine.control.ui.screens.BassScreen
 import com.bassengine.control.ui.screens.HomeScreen
 import com.bassengine.control.ui.screens.SettingsScreen
-import com.bassengine.control.ui.screens.SetupScreen
 import com.bassengine.control.ui.screens.SpectrumScreen
 import com.bassengine.control.ui.screens.SurroundScreen
 import com.bassengine.control.ui.theme.BassBackground
@@ -105,10 +104,6 @@ fun BassEngineRoot() {
     val route by vm.route.collectAsStateWithLifecycle()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    val context = LocalContext.current
-    val uiPrefs = remember { context.getSharedPreferences("bass_engine_ui", Context.MODE_PRIVATE) }
-    var setupDone by remember { mutableStateOf(uiPrefs.getBoolean("setup_done", false)) }
-
     val pagerState = rememberPagerState(
         initialPage = config.lastTab.coerceIn(0, navItems.lastIndex)
     ) { navItems.size }
@@ -135,13 +130,6 @@ fun BassEngineRoot() {
     BassTheme(config.theme) {
         Box(Modifier.fillMaxSize()) {
             BassBackground()
-            if (!setupDone) {
-                SetupScreen(onDone = {
-                    uiPrefs.edit().putBoolean("setup_done", true).apply()
-                    setupDone = true
-                })
-                return@Box
-            }
             Scaffold(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),

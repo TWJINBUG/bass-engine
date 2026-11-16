@@ -5,6 +5,23 @@ STATUS=/sdcard/Android/data/com.bassengine.control/files/global_status.json
 PIDFILE=/data/adb/bassengine/daemon.pid
 LOGFILE=/data/adb/bassengine/daemon.log
 mkdir -p /data/adb/bassengine
+
+# 模块自带控制 App：版本不一致就静默安装/升级
+APP_APK="$MODDIR/app/BassEngine.apk"
+APP_VER=7.3.0
+if [ -f "$APP_APK" ]; then
+  (
+    for i in 1 2 3 4 5 6; do
+      CUR=$(dumpsys package com.bassengine.control 2>/dev/null | sed -n 's/.*versionName=//p' | head -1)
+      [ "$CUR" = "$APP_VER" ] && break
+      cp "$APP_APK" /data/local/tmp/bassengine.apk
+      chmod 644 /data/local/tmp/bassengine.apk
+      pm install -r /data/local/tmp/bassengine.apk >/dev/null 2>&1
+      rm -f /data/local/tmp/bassengine.apk
+      sleep 8
+    done
+  ) &
+fi
 if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt 262144 ]; then
   mv "$LOGFILE" "$LOGFILE.old"
 fi

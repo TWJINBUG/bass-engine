@@ -6,13 +6,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -218,25 +222,21 @@ fun HomeScreen(
             }
         }
 
-        SectionHeader("预设 SOUND PRESETS", "长按卡片可重命名、改色、导出或删除")
-        presets.chunked(2).forEach { row ->
-            Row(
-                Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                row.forEach { preset ->
-                    PresetCard(
-                        preset = preset,
-                        selected = config.presetId == preset.id,
-                        onClick = {
-                            vm.selectPreset(preset.id)
-                            Toast.makeText(context, "预设 · ${preset.name}", Toast.LENGTH_SHORT).show()
-                        },
-                        onLongClick = { actionPreset = preset },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+        SectionHeader("预设 SOUND PRESETS", "左右滑动选择 · 长按可重命名、改色、导出或删除")
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(presets, key = { it.id }) { preset ->
+                PresetChip(
+                    preset = preset,
+                    selected = config.presetId == preset.id,
+                    onClick = {
+                        vm.selectPreset(preset.id)
+                        Toast.makeText(context, "预设 · ${preset.name}", Toast.LENGTH_SHORT).show()
+                    },
+                    onLongClick = { actionPreset = preset }
+                )
             }
         }
 
@@ -398,67 +398,48 @@ fun HomeScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PresetCard(
+private fun PresetChip(
     preset: Preset,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onLongClick: () -> Unit
 ) {
     val p = LocalPalette.current
-    val shape = RoundedCornerShape(22.dp)
     val accent = Color(preset.color)
-    val brush = if (selected) {
-        Brush.linearGradient(listOf(p.accent2.copy(alpha = 0.92f), p.accent1.copy(alpha = 0.68f)))
-    } else {
-        Brush.linearGradient(listOf(Color.White.copy(alpha = 0.075f), Color.White.copy(alpha = 0.025f)))
-    }
-    Box(
-        modifier
-            .height(102.dp)
-            .clip(shape)
-            .background(brush)
-            .border(
-                1.dp,
-                if (selected) Color.White.copy(alpha = 0.35f) else accent.copy(alpha = 0.28f),
-                shape
-            )
+    val bg by animateColorAsState(
+        if (selected) accent.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.05f),
+        label = "presetChipBg"
+    )
+    val borderColor by animateColorAsState(
+        if (selected) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f),
+        label = "presetChipBorder"
+    )
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .border(1.dp, borderColor, RoundedCornerShape(50))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(14.dp)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(Modifier.fillMaxSize()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(if (selected) Color.White else accent)
-                )
-                Spacer(Modifier.weight(1f))
-                if (selected) {
-                    Text("当前", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            Text(
-                preset.name,
-                color = p.text,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                preset.subtitle,
-                color = if (selected) Color.White.copy(alpha = 0.82f) else p.muted,
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 3.dp)
-            )
-        }
+        Box(
+            Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(if (selected) Color.White else accent)
+        )
+        Text(
+            preset.name,
+            color = if (selected) p.text else p.muted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 7.dp)
+        )
     }
 }
+
 
 @Composable
 private fun ColorRow(selected: Long, onSelect: (Long) -> Unit) {

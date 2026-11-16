@@ -23,6 +23,10 @@ object Presets {
     const val HIRES = "hires"
     const val HARMAN = "harman"
     const val ONEPLUS15 = "oneplus15"
+    const val DOLBY = "dolby"
+    const val ANACONDA = "anaconda"
+    const val LIVE = "live"
+    const val CLUB = "club"
     const val CUSTOM = "custom"
 
     val all: List<Preset> = listOf(
@@ -61,6 +65,22 @@ object Presets {
         Preset(
             ONEPLUS15, "一加 15 特调", "按 PLK110 双扬声器收低频、提中高频", 0xFFFF5252,
             listOf(4f, 3.5f, 2f, 0.5f, -1f, 0f, 1.5f, 2f, 2.5f, 1.5f)
+        ),
+        Preset(
+            DOLBY, "杜比全景声", "两头拉开、包围感强，适合电影与现场", 0xFF26C6DA,
+            listOf(4.5f, 3.5f, 1.5f, -0.5f, 0f, 0.5f, 2f, 3f, 4f, 3.5f)
+        ),
+        Preset(
+            ANACONDA, "蟒蛇音效", "超低频下潜深、拳拳到肉，慎用大音量", 0xFF8E24AA,
+            listOf(7f, 5f, 2f, 0f, -1f, -0.5f, 0.5f, 1.5f, 1f, 0f)
+        ),
+        Preset(
+            LIVE, "演唱会 LIVE", "中频靠前、空间开阔，像站在舞台前", 0xFFFFB300,
+            listOf(2.5f, 2f, 1.5f, 1f, 1.5f, 2f, 2.5f, 2f, 1.5f, 0.5f)
+        ),
+        Preset(
+            CLUB, "电音 CLUB", "鼓点冲击 + 高频亮片，适合 EDM / 蹦迪", 0xFF00E676,
+            listOf(6f, 4f, 1f, 0f, -1f, 0f, 1f, 2f, 3f, 1.5f)
         )
     )
 

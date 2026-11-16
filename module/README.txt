@@ -1,5 +1,6 @@
-BASS ENGINE Global DSP (KernelSU module) v0.2.0
+BASS ENGINE Global DSP (KernelSU module) v0.3.0
 
+- Bundles the control app (app/BassEngine.apk) and installs/updates it automatically.
 - Starts a root app_process daemon at boot (service.sh).
 - Attaches system DynamicsProcessing to audio session 0, so every app shares
   the same DSP chain. No kernel, no partition, no /vendor changes.
